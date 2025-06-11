@@ -12,6 +12,7 @@ public class OutboxProcessorService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<OutboxProcessorService> _logger;
+    private const int RetryDelaySeconds = 5;
 
     public OutboxProcessorService(
         IServiceProvider serviceProvider,
@@ -31,12 +32,20 @@ public class OutboxProcessorService : BackgroundService
                 var orderService = scope.ServiceProvider.GetRequiredService<IOrderService>();
                 await orderService.ProcessOutboxMessagesAsync();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogError(ex, "Error occurred while processing outbox messages");
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Normal cancellation, exit the loop
+                break;
+            }
         }
     }
 } 
