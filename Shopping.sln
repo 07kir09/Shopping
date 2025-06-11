@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7139D50E-2075-4821-8CD4-D96867AB74FE}"
+	ProjectSection(SolutionItems) = preProject
+		src\README.md = src\README.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shopping.ApiGateway", "src\Shopping.ApiGateway\Shopping.ApiGateway.csproj", "{69C4B1A8-6515-4ECB-9AF1-122EF2D95114}"
 EndProject

@@ -26,6 +26,9 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 // Configure background service for processing outbox messages
 builder.Services.AddHostedService<OutboxProcessorService>();
 
+// Configure background service behavior
+builder.Services.Configure<HostOptions>(opts => opts.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

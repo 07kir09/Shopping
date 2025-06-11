@@ -1,42 +1,26 @@
 import React from 'react';
-import { 
-    CssBaseline, 
-    Container, 
-    AppBar, 
-    Toolbar, 
-    Typography,
-    ThemeProvider,
-    createTheme
-} from '@mui/material';
-import CreateOrder from './components/CreateOrder';
-
-const theme = createTheme({
-    palette: {
-        primary: {
-            main: '#1976d2',
-        },
-        secondary: {
-            main: '#dc004e',
-        },
-    },
-});
+import logo from './logo.svg';
+import './App.css';
 
 function App() {
-    return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <AppBar position="static">
-                <Toolbar>
-                    <Typography variant="h6">
-                        Shopping Application
-                    </Typography>
-                </Toolbar>
-            </AppBar>
-            <Container>
-                <CreateOrder />
-            </Container>
-        </ThemeProvider>
-    );
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.tsx</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
 }
 
 export default App;

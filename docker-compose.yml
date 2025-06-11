@@ -2,11 +2,11 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:latest
+    image: postgres:15
     environment:
-      POSTGRES_DB: shopping
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ShoppingOrders
     ports:
       - "5432:5432"
     volumes:
@@ -17,51 +17,6 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-
-  orders-service:
-    build:
-      context: .
-      dockerfile: src/Shopping.OrdersService/Dockerfile
-    ports:
-      - "5001:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=shopping;Username=postgres;Password=postgres
-      - RabbitMQ__HostName=rabbitmq
-      - RabbitMQ__UserName=guest
-      - RabbitMQ__Password=guest
-    depends_on:
-      - postgres
-      - rabbitmq
-
-  payments-service:
-    build:
-      context: .
-      dockerfile: src/Shopping.PaymentsService/Dockerfile
-    ports:
-      - "5002:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=shopping;Username=postgres;Password=postgres
-      - RabbitMQ__HostName=rabbitmq
-      - RabbitMQ__UserName=guest
-      - RabbitMQ__Password=guest
-    depends_on:
-      - postgres
-      - rabbitmq
-
-  web:
-    build:
-      context: ./src/shopping-web
-      dockerfile: Dockerfile
-    ports:
-      - "3000:80"
-    depends_on:
-      - orders-service
-      - payments-service
 
 volumes:
   postgres_data:
