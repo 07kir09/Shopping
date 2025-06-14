@@ -12,13 +12,29 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Добавляем CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
 // Configure database
 builder.Services.AddDbContext<OrdersDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configure RabbitMQ
+// Регистрируем RabbitMQ
 builder.Services.AddSingleton<IMessagePublisher>(sp =>
-    new RabbitMQPublisher(builder.Configuration["RabbitMQ:HostName"]));
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var logger = sp.GetRequiredService<ILogger<RabbitMQPublisher>>();
+    var hostName = configuration["RabbitMQ:Host"] ?? "rabbitmq";
+    return new RabbitMQPublisher(hostName, logger);
+});
 
 // Register services
 builder.Services.AddScoped<IOrderService, OrderService>();
@@ -37,6 +53,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Добавляем использование CORS
+app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

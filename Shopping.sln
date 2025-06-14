@@ -1,5 +1,4 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -15,6 +14,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shopping.PaymentsService", "src\Shopping.PaymentsService\Shopping.PaymentsService.csproj", "{838A2F0D-3974-4788-B8E7-C05787ADB2AA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shopping.Common", "src\Shopping.Common\Shopping.Common.csproj", "{489EB14A-2370-470B-8A55-9151A48D0029}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shopping.Common.Tests", "src\Shopping.Common.Tests\Shopping.Common.Tests.csproj", "{NEW-GUID-1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shopping.OrdersService.Tests", "src\Shopping.OrdersService.Tests\Shopping.OrdersService.Tests.csproj", "{NEW-GUID-2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shopping.PaymentsService.Tests", "src\Shopping.PaymentsService.Tests\Shopping.PaymentsService.Tests.csproj", "{NEW-GUID-3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

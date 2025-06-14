@@ -2,21 +2,88 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15
+    image: postgres:latest
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=ShoppingOrders
+      POSTGRES_DB: shopping
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - shopping-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management
     ports:
       - "5672:5672"
       - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  orders-service:
+    build:
+      context: .
+      dockerfile: src/Shopping.OrdersService/Dockerfile
+    ports:
+      - "5001:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=shopping;Username=postgres;Password=postgres
+      - RabbitMQ__Host=rabbitmq
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - shopping-network
+
+  payments-service:
+    build:
+      context: .
+      dockerfile: src/Shopping.PaymentsService/Dockerfile
+    ports:
+      - "5002:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=shopping;Username=postgres;Password=postgres
+      - RabbitMQ__Host=rabbitmq
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - shopping-network
+
+  web:
+    build:
+      context: .
+      dockerfile: src/shopping-web/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - orders-service
+      - payments-service
+    networks:
+      - shopping-network
+
+networks:
+  shopping-network:
+    driver: bridge
 
 volumes:
   postgres_data:
