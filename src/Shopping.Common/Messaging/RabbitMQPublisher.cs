@@ -2,34 +2,60 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
+using Microsoft.Extensions.Logging;
 namespace Shopping.Common.Messaging;
 
 public class RabbitMQPublisher : IMessagePublisher, IDisposable
 {
     private readonly IConnection _connection;
     private readonly IModel _channel;
-    private const string ExchangeName = "shopping";
+    private readonly ILogger<RabbitMQPublisher> _logger;
 
-    public RabbitMQPublisher(string hostName)
+    public RabbitMQPublisher(string hostName, ILogger<RabbitMQPublisher> logger)
     {
-        var factory = new ConnectionFactory { HostName = hostName };
-        _connection = factory.CreateConnection();
-        _channel = _connection.CreateModel();
-        
-        _channel.ExchangeDeclare(ExchangeName, ExchangeType.Direct, true);
+        _logger = logger;
+        try
+        {
+            var factory = new ConnectionFactory
+            {
+                HostName = hostName,
+                UserName = "guest",
+                Password = "guest",
+                AutomaticRecoveryEnabled = true,
+                NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
+            };
+
+            _connection = factory.CreateConnection();
+            _channel = _connection.CreateModel();
+            _channel.ExchangeDeclare("shopping", ExchangeType.Topic, true);
+            
+            _logger.LogInformation("Successfully connected to RabbitMQ at {HostName}", hostName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to connect to RabbitMQ at {HostName}", hostName);
+            throw;
+        }
     }
 
-    public Task PublishAsync(string messageType, string payload)
+    public void Publish(string message, string routingKey)
     {
-        var body = Encoding.UTF8.GetBytes(payload);
-        _channel.BasicPublish(
-            exchange: ExchangeName,
-            routingKey: messageType,
-            basicProperties: null,
-            body: body);
+        try
+        {
+            var body = Encoding.UTF8.GetBytes(message);
+            _channel.BasicPublish(
+                exchange: "shopping",
+                routingKey: routingKey,
+                basicProperties: null,
+                body: body);
             
-        return Task.CompletedTask;
+            _logger.LogInformation("Message published successfully with routing key {RoutingKey}", routingKey);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish message with routing key {RoutingKey}", routingKey);
+            throw;
+        }
     }
 
     public void Dispose()
