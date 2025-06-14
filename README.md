@@ -1,176 +1,98 @@
-# Shopping Microservices
+# Shopping - Микросервисное приложение для интернет-магазина
 
-Проект представляет собой микросервисную архитектуру для системы онлайн-покупок, состоящую из двух основных сервисов:
+Это приложение представляет собой простой интернет-магазин, построенный на микросервисной архитектуре. Оно состоит из нескольких сервисов, которые работают вместе, чтобы обеспечить полный цикл покупки товаров.
 
-## Сервисы
+## Что умеет приложение?
 
-### Orders Service
-- Управление заказами
-- Создание и отслеживание статуса заказов
-- Интеграция с платежной системой
+- Просмотр каталога товаров
+- Создание и управление заказами
+- Обработка платежей
+- Отслеживание статуса заказа
+- Простой и понятный веб-интерфейс
 
-### Payments Service
-- Управление платежами
-- Обработка транзакций
-- Управление балансом пользователей
+## Из чего состоит проект?
 
-## Технологии
+### Сервисы
 
-- .NET 8
-- PostgreSQL
-- RabbitMQ
-- Docker
-- Entity Framework Core
+1. **Orders Service** (`src/Shopping.OrdersService`)
+   - Управляет заказами
+   - Отслеживает статус заказов
+   - Взаимодействует с другими сервисами
 
-## Запуск проекта
+2. **Payments Service** (`src/Shopping.PaymentsService`)
+   - Обрабатывает платежи
+   - Управляет статусами платежей
+   - Интегрируется с платежными системами
 
-1. Запустите Docker контейнеры:
-```bash
-docker-compose up -d
-```
+3. **Web Interface** (`src/shopping-web`)
+   - Пользовательский интерфейс
+   - Взаимодействие с сервисами через API
+   - Адаптивный дизайн
 
-2. Запустите Orders Service:
-```bash
-cd src/Shopping.OrdersService
-dotnet run
-```
+### Общие компоненты
 
-3. Запустите Payments Service:
-```bash
-cd src/Shopping.PaymentsService
-dotnet run
-```
+- **Common Library** (`src/Shopping.Common`)
+   - Общие модели данных
+   - Интеграция с RabbitMQ для обмена сообщениями
+   - Общие утилиты
 
-## API Documentation
+## Как запустить проект?
 
-После запуска сервисов, документация API доступна через Swagger UI:
-- Orders Service: http://localhost:5001/swagger
-- Payments Service: http://localhost:5002/swagger
+### Требования
 
-## Требования
-
-- .NET 8.0 SDK
 - Docker и Docker Compose
-- SQL Server (можно использовать Docker)
-- RabbitMQ (можно использовать Docker)
+- .NET 7.0 SDK
+- Node.js (для веб-интерфейса)
 
-## Структура проекта
+### Запуск
+
+1. Клонируйте репозиторий:
+   ```bash
+   git clone https://github.com/07kir09/Shopping.git
+   cd Shopping
+   ```
+
+2. Запустите все сервисы через Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
+
+3. Откройте веб-интерфейс в браузере:
+   ```
+   http://localhost:8080
+   ```
+
+## Разработка
+
+### Структура проекта
 
 ```
 Shopping/
 ├── src/
 │   ├── Shopping.Common/           # Общие компоненты
 │   ├── Shopping.OrdersService/    # Сервис заказов
-│   └── Shopping.PaymentsService/  # Сервис платежей
+│   ├── Shopping.PaymentsService/  # Сервис платежей
+│   ├── shopping-web/             # Веб-интерфейс
+│   └── Tests/                    # Тесты
 └── docker-compose.yml            # Конфигурация Docker
 ```
 
-## Настройка базы данных
+### Тестирование
 
-1. Создайте базы данных для сервисов:
-
-```sql
-CREATE DATABASE ShoppingOrders;
-CREATE DATABASE ShoppingPayments;
+Запуск тестов:
+```bash
+dotnet test
 ```
 
-2. Примените миграции (базы данных будут созданы автоматически при первом запуске сервисов)
+## Технологии
 
-## Запуск сервисов
+- **Backend**: .NET 7.0, C#
+- **Frontend**: HTML, CSS, JavaScript
+- **База данных**: PostgreSQL
+- **Очереди сообщений**: RabbitMQ
+- **Контейнеризация**: Docker
+- **Тестирование**: xUnit, Moq
 
-1. Сделайте скрипт запуска исполняемым:
+## Лицензия
 
-```bash
-chmod +x run-services.sh
-```
-
-2. Запустите сервисы:
-
-```bash
-./run-services.sh
-```
-
-Сервисы будут доступны по следующим адресам:
-- Orders Service: http://localhost:5001
-- Payments Service: http://localhost:5002
-
-## Тестирование API
-
-### Swagger UI
-
-Для удобного тестирования API используйте Swagger UI:
-- Orders Service: http://localhost:5001/swagger
-- Payments Service: http://localhost:5002/swagger
-
-### Примеры запросов через curl
-
-1. Создание заказа:
-```bash
-curl -X POST http://localhost:5001/api/orders \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": "123e4567-e89b-12d3-a456-426614174000",
-    "amount": 100.00,
-    "description": "Test order"
-  }'
-```
-
-2. Получение заказов пользователя:
-```bash
-curl http://localhost:5001/api/orders/user/123e4567-e89b-12d3-a456-426614174000
-```
-
-3. Создание платежного аккаунта:
-```bash
-curl -X POST http://localhost:5002/api/payments/accounts \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": "123e4567-e89b-12d3-a456-426614174000"
-  }'
-```
-
-4. Обработка платежа:
-```bash
-curl -X POST http://localhost:5002/api/payments/process \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": "123e4567-e89b-12d3-a456-426614174000",
-    "amount": 100.00,
-    "orderId": "123e4567-e89b-12d3-a456-426614174001"
-  }'
-```
-
-## Мониторинг
-
-- RabbitMQ Management UI: http://localhost:15672
-  - Логин: guest
-  - Пароль: guest
-
-## Остановка сервисов
-
-1. Остановите сервисы:
-```bash
-pkill -f "dotnet run"
-```
-
-2. Остановите инфраструктуру:
-```bash
-docker-compose down
-```
-
-## Устранение неполадок
-
-1. Проверьте логи сервисов:
-```bash
-tail -f /var/log/syslog | grep "dotnet"
-```
-
-2. Проверьте статус Docker контейнеров:
-```bash
-docker-compose ps
-```
-
-3. Проверьте логи Docker контейнеров:
-```bash
-docker-compose logs
-``` 
+MIT License 
