@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping API Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .result { margin: 10px 0; padding: 10px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Shopping API Debug Tool</h1>
+    
+    <div class="test-section">
+        <h2>1. Проверка доступности сервисов</h2>
+        <button onclick="testServices()">Проверить сервисы</button>
+        <div id="services-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Тест Payments API</h2>
+        <input type="text" id="testUserId" placeholder="00000000-0000-0000-0000-000000000001" value="00000000-0000-0000-0000-000000000001" style="width: 300px;">
+        <br><br>
+        <button onclick="testGetAccount()">Получить аккаунт</button>
+        <button onclick="testCreateAccount()">Создать аккаунт</button>
+        <button onclick="testTopUp()">Пополнить баланс (+100)</button>
+        <div id="payments-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Тест Orders API</h2>
+        <button onclick="testCreateOrder()">Создать заказ</button>
+        <button onclick="testGetOrders()">Получить заказы</button>
+        <div id="orders-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Системная информация</h2>
+        <button onclick="showSystemInfo()">Показать информацию</button>
+        <div id="system-info"></div>
+    </div>
+
+    <script>
+        async function testServices() {
+            const result = document.getElementById('services-result');
+            result.innerHTML = '<p>🔍 Проверяем сервисы...</p>';
+            
+            const tests = [
+                { name: 'Payments API', url: 'http://localhost:5002/swagger/v1/swagger.json' },
+                { name: 'Orders API', url: 'http://localhost:5001/swagger/v1/swagger.json' },
+                { name: 'Web Interface', url: 'http://localhost/' }
+            ];
+
+            let html = '';
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url, { mode: 'no-cors' });
+                    html += `<div class="result success">✅ ${test.name}: Доступен</div>`;
+                } catch (error) {
+                    html += `<div class="result error">❌ ${test.name}: Недоступен (${error.message})</div>`;
+                }
+            }
+            result.innerHTML = html;
+        }
+
+        async function testGetAccount() {
+            const userId = document.getElementById('testUserId').value;
+            const result = document.getElementById('payments-result');
+            
+            try {
+                const response = await fetch(`http://localhost:5002/api/Payments/accounts/${userId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.innerHTML = `<div class="result success">✅ Аккаунт получен:<pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                } else {
+                    result.innerHTML = `<div class="result error">❌ Ошибка: ${response.status}<pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="result error">❌ CORS/Network ошибка: ${error.message}</div>`;
+            }
+        }
+
+        async function testCreateAccount() {
+            const userId = document.getElementById('testUserId').value;
+            const result = document.getElementById('payments-result');
+            
+            try {
+                const response = await fetch('http://localhost:5002/api/Payments/accounts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.innerHTML = `<div class="result success">✅ Аккаунт создан:<pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                } else {
+                    result.innerHTML = `<div class="result error">❌ Ошибка: ${response.status}<pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="result error">❌ CORS/Network ошибка: ${error.message}</div>`;
+            }
+        }
+
+        async function testTopUp() {
+            const userId = document.getElementById('testUserId').value;
+            const result = document.getElementById('payments-result');
+            
+            try {
+                const response = await fetch('http://localhost:5002/api/Payments/topup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, amount: 100 })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.innerHTML = `<div class="result success">✅ Баланс пополнен:<pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                } else {
+                    result.innerHTML = `<div class="result error">❌ Ошибка: ${response.status}<pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="result error">❌ CORS/Network ошибка: ${error.message}</div>`;
+            }
+        }
+
+        async function testCreateOrder() {
+            const userId = document.getElementById('testUserId').value;
+            const result = document.getElementById('orders-result');
+            
+            const orderData = {
+                userId,
+                amount: 50,
+                description: 'Тестовый заказ из debug.html'
+            };
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/Orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.innerHTML = `<div class="result success">✅ Заказ создан:<pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                } else {
+                    result.innerHTML = `<div class="result error">❌ Ошибка: ${response.status}<pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="result error">❌ CORS/Network ошибка: ${error.message}</div>`;
+            }
+        }
+
+        async function testGetOrders() {
+            const userId = document.getElementById('testUserId').value;
+            const result = document.getElementById('orders-result');
+            
+            try {
+                const response = await fetch(`http://localhost:5001/api/Orders/user/${userId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.innerHTML = `<div class="result success">✅ Заказы получены:<pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                } else {
+                    result.innerHTML = `<div class="result error">❌ Ошибка: ${response.status}<pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="result error">❌ CORS/Network ошибка: ${error.message}</div>`;
+            }
+        }
+
+        function showSystemInfo() {
+            const result = document.getElementById('system-info');
+            result.innerHTML = `
+                <div class="result">
+                    <h4>Браузер:</h4>
+                    <pre>User Agent: ${navigator.userAgent}</pre>
+                    
+                    <h4>Текущий URL:</h4>
+                    <pre>${window.location.href}</pre>
+                    
+                    <h4>Протокол:</h4>
+                    <pre>${window.location.protocol}</pre>
+                    
+                    <h4>Время:</h4>
+                    <pre>${new Date().toISOString()}</pre>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html> 

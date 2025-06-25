@@ -6,13 +6,24 @@ using Shopping.OrdersService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.WebHost.UseUrls("http://0.0.0.0:80");
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
+    { 
+        Title = "Shopping Orders API", 
+        Version = "v1",
+        Description = "API для управления заказами в интернет-магазине",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "ВОЯКИН КИРИЛЛ ВЛАДИСЛАВОВИЧ",
+            Email = "support@shopping.com"
+        }
+    });
+});
 
-// Добавляем CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", builder =>
@@ -23,11 +34,9 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Configure database
 builder.Services.AddDbContext<OrdersDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Регистрируем RabbitMQ
 builder.Services.AddSingleton<IMessagePublisher>(sp =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
@@ -35,33 +44,31 @@ builder.Services.AddSingleton<IMessagePublisher>(sp =>
     var hostName = configuration["RabbitMQ:Host"] ?? "rabbitmq";
     return new RabbitMQPublisher(hostName, logger);
 });
+builder.Services.AddHttpClient("PaymentsService", client =>
+{
+    client.BaseAddress = new Uri("http://payments-service:80/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
-// Register services
+builder.Services.AddScoped<Shopping.OrdersService.Services.IPaymentClient, Shopping.OrdersService.Services.PaymentClient>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-
-// Configure background service for processing outbox messages
 builder.Services.AddHostedService<OutboxProcessorService>();
-
-// Configure background service behavior
 builder.Services.Configure<HostOptions>(opts => opts.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
     app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-// Добавляем использование CORS
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Shopping Orders API v1");
+});
 app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
-// Ensure database is created
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<OrdersDbContext>();

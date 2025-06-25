@@ -22,9 +22,9 @@ const API = {
                 throw error;
             }
         },
-        async getOrders(userId) {
+        async getUserOrders(userId) {
             try {
-                const response = await fetch(`${this.baseUrl}/Orders?userId=${userId}`);
+                const response = await fetch(`${this.baseUrl}/Orders/user/${userId}`);
                 
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -94,6 +94,27 @@ const API = {
                 return response.json();
             } catch (error) {
                 console.error('Error processing payment:', error);
+                throw error;
+            }
+        },
+        async topUpBalance(userId, amount) {
+            try {
+                const response = await fetch(`${this.baseUrl}/Payments/topup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId, amount })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Ошибка при пополнении баланса');
+                }
+                
+                return response.json();
+            } catch (error) {
+                console.error('Error topping up balance:', error);
                 throw error;
             }
         }

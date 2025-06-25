@@ -17,30 +17,55 @@ public class OrderService : IOrderService
 {
     private readonly OrdersDbContext _context;
     private readonly IMessagePublisher _messagePublisher;
+    private readonly IPaymentClient _paymentClient;
     private readonly ILogger<OrderService> _logger;
 
     public OrderService(
         OrdersDbContext context,
         IMessagePublisher messagePublisher,
+        IPaymentClient paymentClient,
         ILogger<OrderService> logger)
     {
         _context = context;
         _messagePublisher = messagePublisher;
+        _paymentClient = paymentClient;
         _logger = logger;
     }
 
     public async Task<Order> CreateOrderAsync(CreateOrderRequest request)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
+        _logger.LogInformation("Creating order for user {UserId}, amount {Amount}", request.UserId, request.Amount);
+        var account = await _paymentClient.GetAccountAsync(request.UserId);
+        if (account == null)
+        {
+            _logger.LogWarning("Account not found for user {UserId}", request.UserId);
+            throw new InvalidOperationException("Аккаунт пользователя не найден. Создайте аккаунт сначала.");
+        }
+
+        if (account.Balance < request.Amount)
+        {
+            _logger.LogWarning("Insufficient funds for user {UserId}. Balance: {Balance}, Required: {Amount}", 
+                request.UserId, account.Balance, request.Amount);
+            throw new InvalidOperationException($"Недостаточно средств на счету. Доступно: {account.Balance:C}, требуется: {request.Amount:C}");
+        }
+
+        var orderId = Guid.NewGuid();
+        var paymentSuccess = await _paymentClient.ProcessPaymentAsync(request.UserId, request.Amount, orderId);
+        
+        if (!paymentSuccess)
+        {
+            _logger.LogWarning("Payment failed for order {OrderId}", orderId);
+            throw new InvalidOperationException("Ошибка при списании средств. Возможно, недостаточно средств на счету.");
+        }
         try
         {
             var order = new Order
             {
-                Id = Guid.NewGuid(),
+                Id = orderId,
                 UserId = request.UserId,
                 Amount = request.Amount,
                 Description = request.Description,
-                Status = "Created",
+                Status = "Paid",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -56,6 +81,7 @@ public class OrderService : IOrderService
                     OrderId = order.Id,
                     UserId = order.UserId,
                     Amount = order.Amount,
+                    Status = order.Status,
                     Timestamp = DateTime.UtcNow
                 }),
                 Status = "Pending",
@@ -64,16 +90,15 @@ public class OrderService : IOrderService
 
             _context.OutboxMessages.Add(outboxMessage);
             await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
 
-            _logger.LogInformation("Created new order {OrderId} for user {UserId}", order.Id, order.UserId);
+            _logger.LogInformation("Successfully created and paid order {OrderId} for user {UserId}. Amount: {Amount}", 
+                order.Id, order.UserId, order.Amount);
             return order;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating order for user {UserId}", request.UserId);
-            await transaction.RollbackAsync();
-            throw;
+            _logger.LogError(ex, "Error saving order {OrderId} after successful payment", orderId);
+            throw new InvalidOperationException("Заказ оплачен, но возникла ошибка при сохранении. Обратитесь в службу поддержки.");
         }
     }
 

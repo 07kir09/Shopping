@@ -8,8 +8,12 @@ using Shopping.Common.Models;
 
 namespace Shopping.OrdersService.Controllers;
 
+/// <summary>
+/// Контроллер для управления заказами
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
@@ -19,8 +23,21 @@ public class OrdersController : ControllerBase
         _orderService = orderService;
     }
 
+    /// <summary>
+    /// Создать новый заказ с автоматическим списанием средств
+    /// </summary>
+    /// <param name="request">Данные для создания заказа</param>
+    /// <returns>Созданный заказ</returns>
+    /// <response code="200">Заказ успешно создан и оплачен</response>
+    /// <response code="400">Недостаточно средств на счету или некорректные данные</response>
+    /// <response code="404">Аккаунт пользователя не найден</response>
     [HttpPost]
+    [ProducesResponseType(typeof(OrderResponse), 200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(404)]
     public async Task<ActionResult<OrderResponse>> CreateOrder([FromBody] CreateOrderRequest request)
+    {
+        try
     {
         var order = await _orderService.CreateOrderAsync(request);
         return Ok(new OrderResponse
@@ -34,8 +51,24 @@ public class OrdersController : ControllerBase
             UpdatedAt = order.UpdatedAt
         });
     }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "Внутренняя ошибка сервера при создании заказа");
+        }
+    }
 
+    /// <summary>
+    /// Получить все заказы пользователя
+    /// </summary>
+    /// <param name="userId">ID пользователя</param>
+    /// <returns>Список заказов пользователя</returns>
+    /// <response code="200">Список заказов успешно получен</response>
     [HttpGet("user/{userId}")]
+    [ProducesResponseType(typeof(IEnumerable<OrderResponse>), 200)]
     public async Task<ActionResult<IEnumerable<OrderResponse>>> GetUserOrders(Guid userId)
     {
         var orders = await _orderService.GetUserOrdersAsync(userId);

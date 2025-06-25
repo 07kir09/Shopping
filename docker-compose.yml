@@ -28,15 +28,18 @@ services:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
     healthcheck:
-      test: ["CMD", "rabbitmqctl", "status"]
-      interval: 30s
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
       timeout: 10s
       retries: 5
+      start_period: 30s
+    networks:
+      - shopping-network
 
   orders-service:
     build:
-      context: .
-      dockerfile: src/Shopping.OrdersService/Dockerfile
+      context: ./src/Shopping.OrdersService
+      dockerfile: Dockerfile
     ports:
       - "5001:80"
     environment:
@@ -48,13 +51,14 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - shopping-network
 
   payments-service:
     build:
-      context: .
-      dockerfile: src/Shopping.PaymentsService/Dockerfile
+      context: ./src/Shopping.PaymentsService
+      dockerfile: Dockerfile
     ports:
       - "5002:80"
     environment:
@@ -66,6 +70,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - shopping-network
 
