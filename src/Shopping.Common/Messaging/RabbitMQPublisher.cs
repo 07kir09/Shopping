@@ -58,6 +58,11 @@ public class RabbitMQPublisher : IMessagePublisher, IDisposable
         }
     }
 
+    public async Task PublishAsync(string messageType, string payload)
+    {
+        await Task.Run(() => Publish(payload, messageType));
+    }
+
     public void Dispose()
     {
         _channel?.Dispose();

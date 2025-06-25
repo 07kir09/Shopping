@@ -71,8 +71,8 @@ services:
 
   web:
     build:
-      context: .
-      dockerfile: src/shopping-web/Dockerfile
+      context: ./src/shopping-web
+      dockerfile: Dockerfile
     ports:
       - "80:80"
     depends_on:
